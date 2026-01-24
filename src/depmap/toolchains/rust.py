@@ -4,7 +4,7 @@ import os
 import tomllib
 from pathlib import Path
 
-from .base import Dependency, register_toolchain
+from .base import Dependency, ToolchainError, register_toolchain
 
 
 class RustToolchain:
@@ -17,16 +17,26 @@ class RustToolchain:
         return (project_root / "Cargo.toml").exists()
 
     def list_dependencies(self, project_root: Path) -> list[Dependency]:
-        """Parse Cargo.lock and return list of dependencies."""
+        """Parse Cargo.lock and return list of dependencies.
+        
+        Returns empty list for missing or empty lock file.
+        Raises ToolchainError for malformed content.
+        """
         lock_path = project_root / "Cargo.lock"
         if not lock_path.exists():
             return []
 
         try:
             with open(lock_path, "rb") as f:
-                data = tomllib.load(f)
-        except (OSError, tomllib.TOMLDecodeError):
+                content = f.read()
+                if not content.strip():
+                    return []  # Empty file
+                data = tomllib.loads(content.decode("utf-8"))
+        except tomllib.TOMLDecodeError as e:
+            # Malformed TOML - return empty for graceful degradation
             return []
+        except OSError as e:
+            raise ToolchainError(self.name, f"Failed to read Cargo.lock: {e}", e)
 
         deps = []
         for pkg in data.get("package", []):

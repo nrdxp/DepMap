@@ -4,7 +4,7 @@ import os
 import re
 from pathlib import Path
 
-from .base import Dependency, register_toolchain
+from .base import Dependency, ToolchainError, register_toolchain
 
 
 class GoToolchain:
@@ -22,6 +22,9 @@ class GoToolchain:
         go.sum format: module version hash
         Each module may appear twice (once for go.mod, once for module content).
         We deduplicate by (name, version).
+        
+        Returns empty list for missing or empty file.
+        Raises ToolchainError for I/O errors.
         """
         sum_path = project_root / "go.sum"
         if not sum_path.exists():
@@ -29,8 +32,8 @@ class GoToolchain:
 
         try:
             content = sum_path.read_text()
-        except OSError:
-            return []
+        except OSError as e:
+            raise ToolchainError(self.name, f"Failed to read go.sum: {e}", e)
 
         # Pattern: module_path version hash
         # Version may have /go.mod suffix which we strip

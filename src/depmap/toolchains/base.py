@@ -5,6 +5,33 @@ from pathlib import Path
 from typing import Protocol
 
 
+class DepMapError(Exception):
+    """Base exception for all DepMap errors."""
+
+    pass
+
+
+class ToolchainError(DepMapError):
+    """Error during toolchain detection or dependency parsing."""
+
+    def __init__(self, toolchain: str, message: str, cause: Exception | None = None):
+        self.toolchain = toolchain
+        self.cause = cause
+        super().__init__(f"[{toolchain}] {message}")
+        if cause:
+            self.__cause__ = cause
+
+
+class ResolutionError(DepMapError):
+    """Error during dependency resolution."""
+
+    def __init__(self, message: str, cause: Exception | None = None):
+        self.cause = cause
+        super().__init__(message)
+        if cause:
+            self.__cause__ = cause
+
+
 @dataclass
 class Dependency:
     """Represents a resolved dependency."""
@@ -39,3 +66,4 @@ TOOLCHAIN_REGISTRY: dict[str, ToolchainPlugin] = {}
 def register_toolchain(plugin: ToolchainPlugin) -> None:
     """Register a toolchain plugin in the global registry."""
     TOOLCHAIN_REGISTRY[plugin.name] = plugin
+

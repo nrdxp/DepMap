@@ -4,7 +4,7 @@ import logging
 from dataclasses import asdict
 from pathlib import Path
 
-from .toolchains import TOOLCHAIN_REGISTRY, Dependency
+from .toolchains import TOOLCHAIN_REGISTRY, Dependency, ResolutionError, ToolchainError
 
 log = logging.getLogger(__name__)
 

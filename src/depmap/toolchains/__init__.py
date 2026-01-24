@@ -2,7 +2,10 @@
 
 from .base import (
     TOOLCHAIN_REGISTRY,
+    DepMapError,
     Dependency,
+    ResolutionError,
+    ToolchainError,
     ToolchainPlugin,
     register_toolchain,
 )
@@ -13,7 +16,10 @@ from . import rust  # noqa: F401
 
 __all__ = [
     "TOOLCHAIN_REGISTRY",
+    "DepMapError",
     "Dependency",
+    "ResolutionError",
+    "ToolchainError",
     "ToolchainPlugin",
     "register_toolchain",
 ]
