@@ -7,6 +7,7 @@ from typing import Any
 from fastmcp import FastMCP, settings
 
 from .repomap_class import RepoMap
+from .resolver import resolve_project_dependencies
 from .utils import count_tokens, read_text
 
 
@@ -54,7 +55,7 @@ log = logging.getLogger(__name__)
 settings.stateless_http = True
 
 # Create MCP server
-mcp = FastMCP("RepoMapServer")
+mcp = FastMCP("DepMapServer")
 
 
 @mcp.tool()
@@ -277,10 +278,145 @@ async def search_identifiers(
         return {"error": f"Error searching identifiers: {str(e)}"}
 
 
+@mcp.tool()
+async def resolve_dependencies(
+    project_root: str,
+    toolchains: list[str] | None = None,
+    deps: list[str] | None = None,
+) -> dict[str, Any]:
+    """Resolve project dependencies and their local source locations.
+
+    Detects toolchains (Rust, Go, etc.) in the project and resolves
+    dependency source paths from local caches.
+
+    Args:
+        project_root: Root directory of the project (absolute path)
+        toolchains: Optional list of toolchains to check (e.g., ["rust", "go"])
+        deps: Optional list of specific dependency names to resolve
+
+    Returns:
+        Dictionary with:
+        - toolchains_detected: list of detected toolchain names
+        - dependencies: list of resolved deps with name, version, source_path
+        - unresolved: list of deps that couldn't be located
+    """
+    if not os.path.isdir(project_root):
+        return {"error": f"Project root directory not found: {project_root}"}
+
+    try:
+        result = await asyncio.to_thread(
+            resolve_project_dependencies,
+            Path(project_root),
+            toolchains,
+            deps,
+        )
+        return result
+    except Exception as e:
+        log.exception(f"Error resolving dependencies for '{project_root}': {e}")
+        return {"error": f"Error resolving dependencies: {str(e)}"}
+
+
+@mcp.tool()
+async def dep_map(
+    project_root: str,
+    deps: list[str],
+    token_limit: int = 4096,
+    verbose: bool = False,
+) -> dict[str, Any]:
+    """Generate a repository map for specific dependencies.
+
+    Resolves the specified dependencies and maps their API surface.
+    Use this to understand the API of external libraries your project uses.
+
+    Args:
+        project_root: Root directory of the project (absolute path)
+        deps: List of dependency names to map (e.g., ["serde", "tokio"])
+        token_limit: Maximum tokens for the generated map
+        verbose: Enable verbose logging
+
+    Returns:
+        Dictionary with:
+        - map: the generated API map for the dependencies
+        - resolved: list of successfully resolved deps
+        - unresolved: list of deps that couldn't be located
+    """
+    if not os.path.isdir(project_root):
+        return {"error": f"Project root directory not found: {project_root}"}
+
+    if not deps:
+        return {"error": "No dependencies specified. Provide a list of dep names."}
+
+    try:
+        # Resolve the specified dependencies
+        resolution = await asyncio.to_thread(
+            resolve_project_dependencies,
+            Path(project_root),
+            None,  # Check all toolchains
+            deps,
+        )
+
+        # Collect source paths for resolved deps
+        dep_source_paths: list[str] = []
+        resolved_names: list[str] = []
+        for dep in resolution["dependencies"]:
+            if dep["source_path"]:
+                dep_source_paths.append(dep["source_path"])
+                resolved_names.append(dep["name"])
+
+        if not dep_source_paths:
+            return {
+                "map": "No dependency sources found.",
+                "resolved": [],
+                "unresolved": resolution["unresolved"],
+            }
+
+        # Find all source files in dependency directories
+        all_dep_files: list[str] = []
+        for dep_path in dep_source_paths:
+            all_dep_files.extend(find_src_files(dep_path))
+
+        if not all_dep_files:
+            return {
+                "map": "No source files found in dependencies.",
+                "resolved": resolved_names,
+                "unresolved": resolution["unresolved"],
+            }
+
+        # Generate map using RepoMap
+        repo_mapper = RepoMap(
+            map_tokens=token_limit,
+            root=dep_source_paths[0],  # Use first dep as root
+            token_counter_func=lambda text: count_tokens(text, "gpt-4"),
+            file_reader_func=read_text,
+            output_handler_funcs={"info": log.info, "warning": log.warning, "error": log.error},
+            verbose=verbose,
+            exclude_unranked=True,
+        )
+
+        map_content, _ = await asyncio.to_thread(
+            repo_mapper.get_repo_map,
+            chat_files=[],
+            other_files=all_dep_files,
+            mentioned_fnames=None,
+            mentioned_idents=None,
+            force_refresh=False,
+        )
+
+        return {
+            "map": map_content or "No repository map could be generated.",
+            "resolved": resolved_names,
+            "unresolved": resolution["unresolved"],
+        }
+
+    except Exception as e:
+        log.exception(f"Error generating dep_map for '{project_root}': {e}")
+        return {"error": f"Error generating dependency map: {str(e)}"}
+
+
 # --- Main Entry Point ---
 def main():
     # Run the MCP server
-    log.debug("Starting FastMCP server...")
+    log.debug("Starting DepMap MCP server...")
     mcp.run()
 
 
