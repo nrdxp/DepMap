@@ -16,12 +16,6 @@ def go_toolchain():
     return GoToolchain()
 
 
-@pytest.fixture
-def fixtures_dir():
-    """Path to test fixtures directory."""
-    return Path(__file__).parent.parent / "fixtures"
-
-
 class TestGoDetect:
     """Tests for GoToolchain.detect()."""
 
@@ -124,3 +118,27 @@ class TestGoRegistration:
 
         assert "go" in TOOLCHAIN_REGISTRY
         assert isinstance(TOOLCHAIN_REGISTRY["go"], GoToolchain)
+
+
+class TestGoEdgeCases:
+    """Edge case tests for error handling."""
+
+    def test_malformed_go_sum_handles_gracefully(self, go_toolchain, fixtures_dir):
+        """Handles malformed go.sum without crashing."""
+        import shutil
+        import tempfile
+        
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            shutil.copy(fixtures_dir / "malformed_go.sum", tmp_path / "go.sum")
+            
+            # Should not crash, may return partial results
+            deps = go_toolchain.list_dependencies(tmp_path)
+            # The malformed file has one valid-ish line
+            assert isinstance(deps, list)
+
+    def test_empty_go_sum_returns_empty(self, go_toolchain, tmp_path):
+        """Returns empty list for empty go.sum."""
+        (tmp_path / "go.sum").write_text("")
+        deps = go_toolchain.list_dependencies(tmp_path)
+        assert deps == []

@@ -1,0 +1,2 @@
+# This is a malformed Cargo.lock for testing error handling
+not valid toml at all {{{

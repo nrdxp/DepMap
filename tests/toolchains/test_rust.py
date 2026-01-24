@@ -16,12 +16,6 @@ def rust_toolchain():
     return RustToolchain()
 
 
-@pytest.fixture
-def fixtures_dir():
-    """Path to test fixtures directory."""
-    return Path(__file__).parent.parent / "fixtures"
-
-
 class TestRustDetect:
     """Tests for RustToolchain.detect()."""
 
@@ -114,3 +108,26 @@ class TestRustRegistration:
         
         assert "rust" in TOOLCHAIN_REGISTRY
         assert isinstance(TOOLCHAIN_REGISTRY["rust"], RustToolchain)
+
+
+class TestRustEdgeCases:
+    """Edge case tests for error handling."""
+
+    def test_malformed_cargo_lock_returns_empty(self, rust_toolchain, fixtures_dir):
+        """Returns empty list for malformed Cargo.lock."""
+        # Create temp dir with malformed lock
+        import shutil
+        import tempfile
+        
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            shutil.copy(fixtures_dir / "malformed_Cargo.lock", tmp_path / "Cargo.lock")
+            
+            deps = rust_toolchain.list_dependencies(tmp_path)
+            assert deps == []
+
+    def test_empty_cargo_lock_returns_empty(self, rust_toolchain, tmp_path):
+        """Returns empty list for empty Cargo.lock."""
+        (tmp_path / "Cargo.lock").write_text("")
+        deps = rust_toolchain.list_dependencies(tmp_path)
+        assert deps == []

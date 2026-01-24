@@ -1,0 +1,3 @@
+# Malformed go.sum for testing - missing hash field
+incomplete/module v1.0.0
+another/broken

@@ -10,12 +10,6 @@ from depmap.resolver import resolve_project_dependencies
 from depmap.toolchains import TOOLCHAIN_REGISTRY
 
 
-@pytest.fixture
-def fixtures_dir():
-    """Path to test fixtures directory."""
-    return Path(__file__).parent / "fixtures"
-
-
 class TestResolveProjectDependencies:
     """Tests for resolve_project_dependencies function."""
 
