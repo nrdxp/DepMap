@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "repomapper"
-version = "0.1.1"
+name = "depmap"
+version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
     "diskcache>=5.6.0",
@@ -18,11 +18,11 @@ dependencies = [
 ]
 
 [project.scripts]
-repomapper = "repomapper.repomap:main"
-repomap-mcp = "repomapper.repomap_server:main"
+depmap = "depmap.repomap:main"
+depmap-mcp = "depmap.repomap_server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/repomapper"]
+packages = ["src/depmap"]
 
 [tool.ruff]
 line-length = 100
