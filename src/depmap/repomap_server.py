@@ -11,8 +11,8 @@ from .resolver import resolve_project_dependencies
 from .utils import count_tokens, read_text
 
 
-# Helper function from your CLI, useful to have here
 def find_src_files(directory: str) -> list[str]:
+    """Recursively find source files, excluding hidden dirs and common build artifacts."""
     if not os.path.isdir(directory):
         return [directory] if os.path.isfile(directory) else []
     src_files = []

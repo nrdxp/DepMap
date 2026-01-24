@@ -50,7 +50,3 @@ def read_text(filename: str, encoding: str = "utf-8", silent: bool = False) -> s
         if not silent:
             print(f"Error decoding {filename}: {e}")
         return None
-    except Exception as e:
-        if not silent:
-            print(f"An unexpected error occurred while reading {filename}: {e}")
-        return None

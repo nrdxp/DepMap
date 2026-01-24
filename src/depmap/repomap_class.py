@@ -251,11 +251,6 @@ class RepoMap:
         if not chat_fnames and not other_fnames:
             return [], FileReport([], {}, 0, 0, 0)
 
-        # Initialize file report early
-        included: list[str] = []
-        excluded: dict[str, str] = {}
-        total_definitions = 0
-        total_references = 0
         if mentioned_fnames is None:
             mentioned_fnames = set()
         if mentioned_idents is None:
