@@ -82,7 +82,7 @@ class RepoMap:
         cache_dir = self.root / TAGS_CACHE_DIR
         try:
             self.TAGS_CACHE = diskcache.Cache(str(cache_dir))
-        except Exception as e:
+        except (OSError, *SQLITE_ERRORS) as e:
             self.output_handlers["warning"](f"Failed to load tags cache: {e}")
             self.TAGS_CACHE = {}
 
@@ -97,7 +97,7 @@ class RepoMap:
             if cache_dir.exists():
                 shutil.rmtree(cache_dir)
             self.load_tags_cache()
-        except Exception:
+        except (OSError, *SQLITE_ERRORS):
             self.output_handlers["warning"]("Failed to recreate tags cache, using in-memory cache")
             self.TAGS_CACHE = {}
 
@@ -189,7 +189,7 @@ class RepoMap:
         try:
             language = get_language(lang)
             parser = get_parser(lang)
-        except Exception as err:
+        except LookupError as err:
             self.output_handlers["error"](f"Skipping file {fname}: {err}")
             return []
 
@@ -235,7 +235,7 @@ class RepoMap:
 
             return tags
 
-        except Exception as e:
+        except (ValueError, AttributeError) as e:
             self.output_handlers["error"](f"Error parsing {fname}: {e}")
             return []
 
@@ -330,12 +330,12 @@ class RepoMap:
                 ranks = nx.pagerank(G, personalization=personalization, alpha=0.85)
             else:
                 ranks = nx.pagerank(G, alpha=0.85)
-        except Exception as e:
+        except nx.PowerIterationFailedConvergence as e:
             print(f"Error during PageRank: {e}")
             try:
                 # If personalization caused the crash, try standard PageRank
                 ranks = nx.pagerank(G, alpha=0.85)
-            except Exception:
+            except nx.PowerIterationFailedConvergence:
                 # If both fail, fallback to uniform
                 ranks = {node: 1.0 for node in G.nodes()}
 
@@ -401,7 +401,7 @@ class RepoMap:
 
             tree_context = self.tree_context_cache[rel_fname]
             return tree_context.format(lois)
-        except Exception:
+        except (TypeError, ValueError):
             # Fallback to simple line extraction
             lines = code.splitlines()
             result_lines = [f"{rel_fname}:"]
