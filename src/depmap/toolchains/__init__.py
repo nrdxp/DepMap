@@ -7,6 +7,9 @@ from .base import (
     register_toolchain,
 )
 
+# Import plugins to trigger auto-registration
+from . import rust  # noqa: F401
+
 __all__ = [
     "TOOLCHAIN_REGISTRY",
     "Dependency",

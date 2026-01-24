@@ -1,0 +1,28 @@
+# Test fixtures for DepMap Cargo.lock parsing
+
+[[package]]
+name = "serde"
+version = "1.0.197"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3fb1c873e1b9b056a4dc4c0c198b24c3ffa59a5dadf8bb4c09fa1e6a7c4c4af9"
+
+[[package]]
+name = "serde_derive"
+version = "1.0.197"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7eb0b34b42edc17f6b7cac84a52a1c5f0e1bb2227e997ca9011ea3dd34e8610b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "tokio"
+version = "1.36.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d891a7b0b78dc7f2a6a4b964c1e9cf88f5a4a5b6b0e4e3e5d6c7f8a9b0c1d2e"
+
+[[package]]
+name = "my-local-crate"
+version = "0.1.0"
