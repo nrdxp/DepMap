@@ -1,0 +1,10 @@
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUGvLwXWLhycbNB7r+dL:E5UdK=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBw/Lv9y3Rq3cJjZMnXp5AhJ2E=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRn=
+github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75=
+github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7=
+golang.org/x/text v0.14.0 h1:ScX5w1eTa3Q=
+golang.org/x/text v0.14.0/go.mod h1:dTCuXG8d=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEW=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BC=

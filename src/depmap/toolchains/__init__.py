@@ -8,6 +8,7 @@ from .base import (
 )
 
 # Import plugins to trigger auto-registration
+from . import go  # noqa: F401
 from . import rust  # noqa: F401
 
 __all__ = [
