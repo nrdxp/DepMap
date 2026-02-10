@@ -106,9 +106,9 @@ Eliminate the two dominant performance bottlenecks in DepMap's mapping pipeline 
    - [x] Convert `nx.MultiDiGraph()` → `nx.DiGraph()` with weighted edges
    - [x] Add in-memory tags dict to eliminate second `get_tags()` loop (B1)
    - [x] ~~Cache tiktoken encoding at `__init__` time (B3)~~ — N/A, tiktoken caches internally
-   - [ ] **Measure: time `repo_map` on DepMap's own source before/after**
-   - [ ] Add test: verify stopword filter correctly removes high-frequency identifiers
-   - [ ] Add test: verify DiGraph edge count is bounded for a known fixture
+   - [x] **Measure: time `repo_map` on DepMap's own source before/after** — 0.31s for 12 files
+   - [x] Add test: verify stopword filter correctly removes high-frequency identifiers
+   - [x] Add test: verify DiGraph edge count is bounded for a known fixture
 
 2. **Phase 2: Rendering Pipeline Optimization** _(conditional — only if binary search is still slow after Phase 1; theoretical ~15× on rendering step)_
    - [ ] Replace binary search with tag-level greedy accumulation in `get_ranked_tags_map_uncached()`
