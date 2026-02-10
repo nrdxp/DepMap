@@ -34,9 +34,7 @@ def resolve_project_dependencies(
     # Determine which toolchains to check
     if toolchains:
         plugins_to_check = [
-            (name, TOOLCHAIN_REGISTRY[name])
-            for name in toolchains
-            if name in TOOLCHAIN_REGISTRY
+            (name, TOOLCHAIN_REGISTRY[name]) for name in toolchains if name in TOOLCHAIN_REGISTRY
         ]
     else:
         plugins_to_check = list(TOOLCHAIN_REGISTRY.items())

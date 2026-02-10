@@ -127,11 +127,11 @@ class TestGoEdgeCases:
         """Handles malformed go.sum without crashing."""
         import shutil
         import tempfile
-        
+
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             shutil.copy(fixtures_dir / "malformed_go.sum", tmp_path / "go.sum")
-            
+
             # Should not crash, may return partial results
             deps = go_toolchain.list_dependencies(tmp_path)
             # The malformed file has one valid-ish line

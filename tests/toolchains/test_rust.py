@@ -34,7 +34,7 @@ class TestRustListDependencies:
     def test_list_dependencies_parses_cargo_lock(self, rust_toolchain, fixtures_dir):
         """Correctly parses dependencies from Cargo.lock."""
         deps = rust_toolchain.list_dependencies(fixtures_dir)
-        
+
         # Should find serde, serde_derive, tokio (but not my-local-crate)
         names = {d.name for d in deps}
         assert "serde" in names
@@ -47,7 +47,7 @@ class TestRustListDependencies:
         """Dependencies have correct version info."""
         deps = rust_toolchain.list_dependencies(fixtures_dir)
         serde = next(d for d in deps if d.name == "serde")
-        
+
         assert serde.version == "1.0.197"
         assert serde.toolchain == "rust"
 
@@ -66,21 +66,21 @@ class TestRustLocateSource:
         index_dir = tmp_path / "registry" / "src" / "index.crates.io-abc123"
         crate_dir = index_dir / "serde-1.0.197"
         crate_dir.mkdir(parents=True)
-        
+
         dep = Dependency(name="serde", version="1.0.197", toolchain="rust")
-        
+
         with patch.dict(os.environ, {"CARGO_HOME": str(tmp_path)}):
             result = rust_toolchain.locate_source(dep)
-        
+
         assert result == crate_dir
 
     def test_locate_source_returns_none_for_missing(self, rust_toolchain, tmp_path):
         """Returns None when crate not found."""
         dep = Dependency(name="nonexistent", version="1.0.0", toolchain="rust")
-        
+
         with patch.dict(os.environ, {"CARGO_HOME": str(tmp_path)}):
             result = rust_toolchain.locate_source(dep)
-        
+
         assert result is None
 
     def test_locate_source_falls_back_to_home_cargo(self, rust_toolchain, tmp_path):
@@ -89,13 +89,13 @@ class TestRustLocateSource:
         cargo_dir = tmp_path / ".cargo" / "registry" / "src" / "index.crates.io-xyz789"
         crate_dir = cargo_dir / "tokio-1.36.0"
         crate_dir.mkdir(parents=True)
-        
+
         dep = Dependency(name="tokio", version="1.36.0", toolchain="rust")
-        
+
         with patch.dict(os.environ, {"CARGO_HOME": ""}, clear=False):
             with patch.object(Path, "home", return_value=tmp_path):
                 result = rust_toolchain.locate_source(dep)
-        
+
         assert result == crate_dir
 
 
@@ -105,7 +105,7 @@ class TestRustRegistration:
     def test_rust_in_registry(self):
         """Rust toolchain is registered on import."""
         from depmap.toolchains import TOOLCHAIN_REGISTRY
-        
+
         assert "rust" in TOOLCHAIN_REGISTRY
         assert isinstance(TOOLCHAIN_REGISTRY["rust"], RustToolchain)
 
@@ -118,11 +118,11 @@ class TestRustEdgeCases:
         # Create temp dir with malformed lock
         import shutil
         import tempfile
-        
+
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             shutil.copy(fixtures_dir / "malformed_Cargo.lock", tmp_path / "Cargo.lock")
-            
+
             deps = rust_toolchain.list_dependencies(tmp_path)
             assert deps == []
 

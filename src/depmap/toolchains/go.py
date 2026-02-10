@@ -22,7 +22,7 @@ class GoToolchain:
         go.sum format: module version hash
         Each module may appear twice (once for go.mod, once for module content).
         We deduplicate by (name, version).
-        
+
         Returns empty list for missing or empty file.
         Raises ToolchainError for I/O errors.
         """

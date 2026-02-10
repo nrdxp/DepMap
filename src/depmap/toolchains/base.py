@@ -66,4 +66,3 @@ TOOLCHAIN_REGISTRY: dict[str, ToolchainPlugin] = {}
 def register_toolchain(plugin: ToolchainPlugin) -> None:
     """Register a toolchain plugin in the global registry."""
     TOOLCHAIN_REGISTRY[plugin.name] = plugin
-

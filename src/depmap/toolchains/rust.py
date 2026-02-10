@@ -18,7 +18,7 @@ class RustToolchain:
 
     def list_dependencies(self, project_root: Path) -> list[Dependency]:
         """Parse Cargo.lock and return list of dependencies.
-        
+
         Returns empty list for missing or empty lock file.
         Raises ToolchainError for malformed content.
         """
