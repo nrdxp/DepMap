@@ -102,10 +102,10 @@ Eliminate the two dominant performance bottlenecks in DepMap's mapping pipeline 
 ## Phases
 
 1. **Phase 1: Graph Construction Fix** — Eliminate quadratic edge explosion _(theoretical ~1000-5000× on graph step)_
-   - [ ] Add two-tier stopword filter: hard keywords (`self`, `this`, `new`, `None`, `null`, `true`, `false`) + configurable frequency threshold (default 50%)
-   - [ ] Convert `nx.MultiDiGraph()` → `nx.DiGraph()` with weighted edges
-   - [ ] Add in-memory tags dict to eliminate second `get_tags()` loop (B1)
-   - [ ] Cache tiktoken encoding at `__init__` time (B3)
+   - [x] Add two-tier stopword filter: hard keywords (`self`, `this`, `new`, `None`, `null`, `true`, `false`) + configurable frequency threshold (default 50%)
+   - [x] Convert `nx.MultiDiGraph()` → `nx.DiGraph()` with weighted edges
+   - [x] Add in-memory tags dict to eliminate second `get_tags()` loop (B1)
+   - [x] ~~Cache tiktoken encoding at `__init__` time (B3)~~ — N/A, tiktoken caches internally
    - [ ] **Measure: time `repo_map` on DepMap's own source before/after**
    - [ ] Add test: verify stopword filter correctly removes high-frequency identifiers
    - [ ] Add test: verify DiGraph edge count is bounded for a known fixture

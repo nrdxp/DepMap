@@ -33,6 +33,44 @@ CACHE_VERSION = 1
 TAGS_CACHE_DIR = os.path.join(os.getcwd(), f".repomap.tags.cache.v{CACHE_VERSION}")
 SQLITE_ERRORS = (sqlite3.OperationalError, sqlite3.DatabaseError)
 
+# Hard stopword keywords — language-level noise that never carries structural signal.
+# These are always filtered regardless of frequency threshold.
+STOPWORD_KEYWORDS = frozenset(
+    {
+        "self",
+        "this",
+        "new",
+        "None",
+        "null",
+        "true",
+        "false",
+        "True",
+        "False",
+        "return",
+        "if",
+        "else",
+        "for",
+        "while",
+        "import",
+        "from",
+        "class",
+        "def",
+        "function",
+        "var",
+        "let",
+        "const",
+        "int",
+        "str",
+        "bool",
+        "float",
+        "string",
+        "void",
+    }
+)
+
+# Default frequency threshold: identifiers appearing in >50% of files are filtered.
+DEFAULT_STOPWORD_FREQUENCY_THRESHOLD = 0.5
+
 
 class RepoMap:
     """Main class for generating repository maps."""
@@ -50,6 +88,7 @@ class RepoMap:
         map_mul_no_files: int = 8,
         refresh: str = "auto",
         exclude_unranked: bool = False,
+        stopword_frequency_threshold: float = DEFAULT_STOPWORD_FREQUENCY_THRESHOLD,
     ):
         """Initialize RepoMap instance."""
         self.map_tokens = map_tokens
@@ -63,6 +102,7 @@ class RepoMap:
         self.map_mul_no_files = map_mul_no_files
         self.refresh = refresh
         self.exclude_unranked = exclude_unranked
+        self.stopword_frequency_threshold = stopword_frequency_threshold
 
         # Set up output handlers
         if output_handler_funcs is None:
@@ -269,10 +309,11 @@ class RepoMap:
         total_definitions = 0
         total_references = 0
 
-        # Collect all tags
+        # Collect all tags (cached in-memory to avoid second get_tags() loop)
         defines = defaultdict(set)
         references = defaultdict(set)
         definitions = defaultdict(set)
+        tags_by_fname: dict[str, list[Tag]] = {}  # B1 fix: cache tags in-memory
 
         personalization = {}
         chat_rel_fnames = set(self.get_rel_fname(f) for f in chat_fnames)
@@ -291,6 +332,7 @@ class RepoMap:
             included.append(fname)
 
             tags = self.get_tags(fname, rel_fname)
+            tags_by_fname[fname] = tags  # Cache for ranked tag collection below
 
             for tag in tags:
                 if tag.kind == "def":
@@ -305,26 +347,60 @@ class RepoMap:
             if fname in chat_fnames:
                 personalization[rel_fname] = 100.0
 
-        # Build graph
-        G = nx.MultiDiGraph()
+        # --- Two-tier stopword filter ---
+        # Tier 1: Hard keywords are always excluded (language-level noise).
+        # Tier 2: Identifiers appearing in >threshold fraction of files are excluded.
+        num_files = len(included) if included else 1
+        frequency_threshold = self.stopword_frequency_threshold
+
+        stopword_idents: set[str] = set()
+        for name in set(defines.keys()) | set(references.keys()):
+            # Tier 1: hard keyword check
+            if name in STOPWORD_KEYWORDS:
+                stopword_idents.add(name)
+                continue
+            # Tier 2: frequency check — count files where identifier appears
+            files_with_ident = defines.get(name, set()) | references.get(name, set())
+            if len(files_with_ident) / num_files > frequency_threshold:
+                stopword_idents.add(name)
+
+        if self.verbose and stopword_idents:
+            self.output_handlers["info"](
+                f"Stopword filter: removed {len(stopword_idents)} identifiers "
+                f"from graph edge construction"
+            )
+
+        # Build graph — weighted DiGraph instead of MultiDiGraph.
+        # Parallel edges are collapsed into a single edge with weight = count
+        # of distinct identifiers connecting the two files.
+        G = nx.DiGraph()
 
         # Add nodes
         for fname in all_fnames:
             rel_fname = self.get_rel_fname(fname)
             G.add_node(rel_fname)
 
-        # Add edges based on references
+        # Add edges based on references, skipping stopword identifiers.
+        # Edge weight = number of distinct (non-stopword) identifiers
+        # referenced from ref_fname and defined in def_fname.
+        edge_weights: dict[tuple[str, str], int] = defaultdict(int)
         for name, ref_fnames in references.items():
+            if name in stopword_idents:
+                continue
             def_fnames = defines.get(name, set())
             for ref_fname in ref_fnames:
                 for def_fname in def_fnames:
                     if ref_fname != def_fname:
-                        G.add_edge(ref_fname, def_fname, name=name)
+                        edge_weights[(ref_fname, def_fname)] += 1
+
+        for (src, dst), weight in edge_weights.items():
+            G.add_edge(src, dst, weight=weight)
 
         if not G.nodes():
             return [], FileReport(excluded, 0, 0, len(all_fnames))
 
-        # Run PageRank
+        # Run PageRank (nx 3.6.1 uses SciPy sparse matrices internally;
+        # weight="weight" is the default parameter)
         try:
             if personalization:
                 ranks = nx.pagerank(G, personalization=personalization, alpha=0.85)
@@ -355,7 +431,7 @@ class RepoMap:
             total_files_considered=len(all_fnames),
         )
 
-        # Collect and rank tags
+        # Collect and rank tags — uses cached tags_by_fname (B1 fix)
         ranked_tags = []
 
         for fname in included:
@@ -368,8 +444,7 @@ class RepoMap:
             ):  # Use a small threshold to exclude near-zero ranks
                 continue
 
-            tags = self.get_tags(fname, rel_fname)
-            for tag in tags:
+            for tag in tags_by_fname[fname]:
                 if tag.kind == "def":
                     # Boost for mentioned identifiers
                     boost = 1.0
