@@ -110,39 +110,61 @@ Eliminate the two dominant performance bottlenecks in DepMap's mapping pipeline 
    - [x] Add test: verify stopword filter correctly removes high-frequency identifiers
    - [x] Add test: verify DiGraph edge count is bounded for a known fixture
 
-2. **Phase 2: Rendering Pipeline Optimization** _(conditional — only if binary search is still slow after Phase 1; theoretical ~15× on rendering step)_
-   - [ ] Replace binary search with tag-level greedy accumulation in `get_ranked_tags_map_uncached()`
-   - [ ] Pre-render each file's full tag set, cache keyed by `(rel_fname, frozenset(lois))`
-   - [ ] Accumulate tags in rank order, tracking per-file token cost
-   - [ ] Trim from tail if final output exceeds budget
-   - [ ] Add test: verify greedy accumulation output fits within token budget
+2. **Phase 2: Rendering Pipeline Optimization** _(DEFERRED — Phase 1 results sufficient; binary search overhead negligible at current scale)_
+   - [ ] ~~Replace binary search with tag-level greedy accumulation in `get_ranked_tags_map_uncached()`~~
+   - [ ] ~~Pre-render each file's full tag set, cache keyed by `(rel_fname, frozenset(lois))`~~
+   - [ ] ~~Accumulate tags in rank order, tracking per-file token cost~~
+   - [ ] ~~Trim from tail if final output exceeds budget~~
+   - [ ] ~~Add test: verify greedy accumulation output fits within token budget~~
 
 ## Verification
 
-- [ ] All existing tests pass: `python -m pytest tests/ -v`
-- [ ] New unit test: stopword filter removes hard-coded keywords
-- [ ] New unit test: stopword filter removes identifiers above frequency threshold
-- [ ] New unit test: DiGraph edge count bounded by F² for a known fixture
-- [ ] Integration: `repo_map` MCP tool produces valid output on DepMap's own source
-- [ ] Performance: timed comparison of Phase 1 before/after
-- [ ] Phase 2 verification (if triggered):
-  - [ ] Greedy accumulation output ≤ token budget
-  - [ ] Trim pass activates when estimate overshoots
+- [x] All existing tests pass: `python -m pytest tests/ -v` — 64 passed
+- [x] New unit test: stopword filter removes hard-coded keywords
+- [x] New unit test: stopword filter removes identifiers above frequency threshold
+- [x] New unit test: DiGraph edge count bounded by F² for a known fixture
+- [x] Integration: `repo_map` MCP tool produces valid output on DepMap's own source
+- [x] Performance: timed comparison of Phase 1 before/after
+- [x] Real-world validation: eka project (128 files, 1209 defs, 3123 refs) — 0.66s
+- [ ] ~~Phase 2 verification~~ _(deferred with Phase 2)_
 
 ## Technical Debt
 
-| Item | Severity | Why Introduced | Follow-Up | Resolved |
-| :--- | :------- | :------------- | :-------- | :------: |
+| Item                                      | Severity | Why Introduced                     | Follow-Up                                                 | Resolved |
+| :---------------------------------------- | :------- | :--------------------------------- | :-------------------------------------------------------- | :------: |
+| `query()` deprecation warning in grep-ast | LOW      | Upstream API change in tree-sitter | Track grep-ast update for `Query()` constructor migration |   [ ]    |
 
 ## Retrospective
 
 ### Process
 
+The `/sketch` → `/plan` → `/core` pipeline worked well here. Two adversarial challenge rounds during planning caught critical findings _before_ implementation:
+
+- **`pagerank_scipy()` is a no-op** — discovered during Challenge Round 2 that `nx.pagerank()` already uses SciPy sparse matrices since networkx 3.0. This prevented us from wasting effort on a swap that would have done nothing.
+- **`weight="weight"` is already the default** — reduced DiGraph migration risk from MEDIUM to LOW before any code was written.
+- **tiktoken caches internally** — discovered during execution that `tiktoken.get_encoding()` uses a module-level dict cache, making our planned caching deliverable unnecessary.
+
+The adversarial pattern of "assume every claim is wrong until verified" earned its keep. Without it, we would have shipped a plan with a redundant phase and two false assumptions.
+
 ### Outcomes
 
+| Metric                 | Before                        | After                   | Improvement                                                                             |
+| :--------------------- | :---------------------------- | :---------------------- | :-------------------------------------------------------------------------------------- |
+| eka (128 files)        | Did not terminate             | 0.66s                   | ∞ → sub-second                                                                          |
+| DepMap self (12 files) | ~0.3s (estimated)             | 0.31s                   | Baseline (too small to bottleneck)                                                      |
+| Graph type             | MultiDiGraph (parallel edges) | DiGraph (weighted)      | Edge count: O(M×F²) → O(F²) max                                                         |
+| Output quality         | Noise-polluted rankings       | Noise-filtered rankings | _Improved_ — stopwords no longer inflate PageRank of files with many keyword references |
+| Test coverage          | 55 tests                      | 64 tests (+9)           | New: stopword filter, edge bounds, regression                                           |
+
+Phase 2 (rendering pipeline, ~15× on binary search) was **deferred indefinitely**. At 0.66s for 128 files, binary search overhead is negligible — the theoretical 15× improvement on the rendering step would save ~10-20ms. If performance degrades on larger codebases in the future, Phase 2 remains a documented option.
+
 ### Pipeline Improvements
+
+- **Challenge rounds should always verify library internals.** The `pagerank_scipy` finding was only possible because we inspected the actual networkx source code rather than trusting documentation or intuition. This should be a standard practice for any optimization plan that claims "swap X for Y."
+- **"Comparable output" was the right constraint.** Demanding identical output would have prevented the stopword filter entirely. The weaker constraint allowed us to _improve_ output quality while still delivering the performance fix.
 
 ## References
 
 - Sketch: `.sketches/performance-bottleneck.md`
-- ADR: `docs/adr/0001-performance-optimization.md` _(to be created at COMMIT)_
+- networkx 3.6.1 PageRank source: confirms SciPy sparse internals
+- tiktoken source: `get_encoding()` caches via module-level `ENCODINGS` dict
