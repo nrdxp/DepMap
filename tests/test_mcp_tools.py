@@ -70,8 +70,9 @@ class TestResolverIntegration:
 
 # Import MCP tool wrappers for integration testing
 import asyncio
-from depmap.repomap_server import repo_map as repo_map_tool
+
 from depmap.repomap_server import dep_map as dep_map_tool
+from depmap.repomap_server import repo_map as repo_map_tool
 
 
 @pytest.fixture
@@ -82,14 +83,12 @@ def code_fixtures_dir():
 
 def run_repo_map(project_root: str, **kwargs) -> dict:
     """Helper to run the repo_map async function."""
-    fn = repo_map_tool.fn
-    return asyncio.run(fn(project_root=project_root, **kwargs))
+    return asyncio.run(repo_map_tool(project_root=project_root, **kwargs))
 
 
 def run_dep_map(project_root: str, deps: list, **kwargs) -> dict:
     """Helper to run the dep_map async function."""
-    fn = dep_map_tool.fn
-    return asyncio.run(fn(project_root=project_root, deps=deps, **kwargs))
+    return asyncio.run(dep_map_tool(project_root=project_root, deps=deps, **kwargs))
 
 
 class TestRepoMapIntegration:

@@ -5,14 +5,11 @@ Covers:
 - DiGraph edge count bounds (weighted edges, no parallel edges)
 """
 
-from collections import defaultdict
 from pathlib import Path
 
-import networkx as nx
 import pytest
 
 from depmap.repomap_class import (
-    DEFAULT_STOPWORD_FREQUENCY_THRESHOLD,
     STOPWORD_KEYWORDS,
     RepoMap,
 )

@@ -17,9 +17,7 @@ def code_fixtures_dir():
 
 def run_search(project_root: str, query: str, **kwargs) -> dict:
     """Helper to run the search_identifiers async function."""
-    # Access the underlying function from the FunctionTool wrapper
-    fn = search_identifiers_tool.fn
-    return asyncio.run(fn(project_root=project_root, query=query, **kwargs))
+    return asyncio.run(search_identifiers_tool(project_root=project_root, query=query, **kwargs))
 
 
 class TestSearchIdentifiers:

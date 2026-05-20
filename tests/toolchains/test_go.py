@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 
-from depmap.toolchains.go import GoToolchain
 from depmap.toolchains.base import Dependency
+from depmap.toolchains.go import GoToolchain
 
 
 @pytest.fixture

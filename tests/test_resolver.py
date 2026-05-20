@@ -1,10 +1,7 @@
 """Tests for resolver module and MCP tools."""
 
-from pathlib import Path
-from unittest.mock import patch
 import os
-
-import pytest
+from unittest.mock import patch
 
 from depmap.resolver import resolve_project_dependencies
 from depmap.toolchains import TOOLCHAIN_REGISTRY

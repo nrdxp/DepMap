@@ -32,7 +32,7 @@ class RustToolchain:
                 if not content.strip():
                     return []  # Empty file
                 data = tomllib.loads(content.decode("utf-8"))
-        except tomllib.TOMLDecodeError as e:
+        except tomllib.TOMLDecodeError:
             # Malformed TOML - return empty for graceful degradation
             return []
         except OSError as e:

@@ -1,18 +1,19 @@
 """DepMap toolchain plugins for dependency resolution."""
 
+# Import plugins to trigger auto-registration
+from . import (
+    go,  # noqa: F401
+    rust,  # noqa: F401
+)
 from .base import (
     TOOLCHAIN_REGISTRY,
-    DepMapError,
     Dependency,
+    DepMapError,
     ResolutionError,
     ToolchainError,
     ToolchainPlugin,
     register_toolchain,
 )
-
-# Import plugins to trigger auto-registration
-from . import go  # noqa: F401
-from . import rust  # noqa: F401
 
 __all__ = [
     "TOOLCHAIN_REGISTRY",

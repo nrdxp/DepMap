@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 
-from depmap.toolchains.rust import RustToolchain
 from depmap.toolchains.base import Dependency
+from depmap.toolchains.rust import RustToolchain
 
 
 @pytest.fixture
