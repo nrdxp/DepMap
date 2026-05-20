@@ -6,7 +6,7 @@ DepMap is a fork of [RepoMapper](https://github.com/pdavis68/RepoMapper) that ad
 
 - **Dependency Resolution**: Detect project toolchains and resolve dependency source paths
 - **Targeted API Mapping**: Map specific dependencies on-demand (context-specific, not blind mapping)
-- **Multi-Toolchain Support**: Rust, Go, and Node.js (npm/yarn/pnpm/bun) supported, extensible plugin architecture
+- **Multi-Toolchain Support**: Rust, Go, Node.js (npm/yarn/pnpm/bun), and Python (pip/poetry/uv) supported, extensible plugin architecture
 - **Environment-Aware**: Respects `$CARGO_HOME`, `$GOMODCACHE`, `$GOPATH`
 - **Original RepoMapper Features**: Tree-sitter parsing, PageRank ranking, token-aware mapping
 
@@ -164,6 +164,7 @@ Search for identifiers across codebase (unchanged from RepoMapper).
 | **Rust** | `Cargo.toml` | `$CARGO_HOME/registry/src/` or `~/.cargo/registry/src/` |
 | **Go** | `go.mod` | `$GOMODCACHE` or `$GOPATH/pkg/mod` or `~/go/pkg/mod` |
 | **Node.js** | `package.json` | Project-local `node_modules/` (supports nested layouts and hoisted monorepos) |
+| **Python** | `requirements.txt` or `pyproject.toml` | Site-packages directory (local virtualenv, active environment, or user-site) |
 
 ## Development
 

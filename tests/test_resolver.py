@@ -96,11 +96,45 @@ class TestResolveProjectDependencies:
         assert express_dep["source_path"] == str(express_dir)
 
 
+    def test_detects_python_toolchain(self, tmp_path):
+        """Detects Python toolchain when requirements.txt exists."""
+        (tmp_path / "requirements.txt").write_text("requests==2.31.0")
+        result = resolve_project_dependencies(tmp_path)
+        assert "python" in result["toolchains_detected"]
+
+    def test_lists_python_dependencies(self, tmp_path, monkeypatch):
+        """Lists dependencies from requirements.txt."""
+        import json
+        import site
+
+        monkeypatch.setattr(site, "getsitepackages", lambda: [])
+        monkeypatch.setattr(site, "getusersitepackages", lambda: None)
+
+        (tmp_path / "requirements.txt").write_text("requests==2.31.0")
+        site_pkgs = tmp_path / ".venv" / "lib" / "python3.10" / "site-packages"
+        site_pkgs.mkdir(parents=True)
+        dist_info = site_pkgs / "requests-2.31.0.dist-info"
+        dist_info.mkdir()
+        reqs_dir = site_pkgs / "requests"
+        reqs_dir.mkdir()
+
+        result = resolve_project_dependencies(tmp_path, toolchains=["python"])
+
+        assert "python" in result["toolchains_detected"]
+        dep_names = {d["name"] for d in result["dependencies"]}
+        assert "requests" in dep_names
+
+        requests_dep = next(d for d in result["dependencies"] if d["name"] == "requests")
+        assert requests_dep["version"] == "2.31.0"
+        assert requests_dep["source_path"] == str(reqs_dir)
+
+
 class TestToolchainRegistry:
     """Tests for the toolchain registry."""
 
     def test_all_toolchains_registered(self):
-        """Rust, Go, and Node toolchains are registered."""
+        """Rust, Go, Node, and Python toolchains are registered."""
         assert "rust" in TOOLCHAIN_REGISTRY
         assert "go" in TOOLCHAIN_REGISTRY
         assert "node" in TOOLCHAIN_REGISTRY
+        assert "python" in TOOLCHAIN_REGISTRY
