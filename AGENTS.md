@@ -39,12 +39,12 @@ The core value proposition: resolve dependencies from local toolchain caches (`~
 
 ## Build & Commands
 
-- **Install (dev):** `pip install -e ".[dev]"`
-- **Run tests:** `pytest tests/ -v`
-- **Run single test:** `pytest tests/test_resolver.py -v`
-- **Lint:** `ruff check src/`
-- **Format:** `ruff format src/`
-- **Run MCP server:** `python -m depmap.repomap_server`
+- **Install (dev):** `uv sync --all-extras` (or `pip install -e ".[dev]"`)
+- **Run tests:** `uv run pytest tests/ -v`
+- **Run single test:** `uv run pytest tests/test_resolver.py -v`
+- **Lint:** `uv run ruff check src/`
+- **Format:** `uv run ruff format src/`
+- **Run MCP server:** `uv run depmap-mcp` (or `python -m depmap.repomap_server`)
 - **CLI entry point:** `depmap` (after install)
 
 > [!NOTE]
@@ -124,13 +124,13 @@ src/depmap/
   {
     "mcpServers": {
       "DepMap": {
-        "command": "python",
-        "args": ["-m", "depmap.repomap_server"],
-        "cwd": "/path/to/DepMap/src"
+        "command": "uvx",
+        "args": ["--from", "git+https://github.com/nrdxp/DepMap.git", "depmap-mcp"]
       }
     }
   }
   ```
+  *(Or use `"command": "uv", "args": ["run", "--project", "/path/to/DepMap", "depmap-mcp"]` for local source execution).*
 
 ---
 

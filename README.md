@@ -10,26 +10,94 @@ DepMap is a fork of [RepoMapper](https://github.com/pdavis68/RepoMapper) that ad
 - **Environment-Aware**: Respects `$CARGO_HOME`, `$GOMODCACHE`, `$GOPATH`
 - **Original RepoMapper Features**: Tree-sitter parsing, PageRank ranking, token-aware mapping
 
-## Installation
+## Installation and Execution
 
-```bash
-# Clone and install
-git clone https://github.com/yourfork/DepMap
-cd DepMap
-pip install -e ".[dev]"
-```
+Several methods exist to install and run DepMap, ranging from zero-setup execution to standard local development environments.
 
-## MCP Server Setup
-
-Add to your MCP settings (e.g., `cline_mcp_settings.json`):
+### 1. Isolated Remote Execution (No Clone Required)
+Execute the MCP server directly from the remote Git repository using `uvx` (or `uv tool run`):
 
 ```json
 {
   "mcpServers": {
     "DepMap": {
-      "command": "python",
-      "args": ["-m", "depmap.repomap_server"],
-      "cwd": "/path/to/DepMap/src"
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/nrdxp/DepMap.git",
+        "depmap-mcp"
+      ]
+    }
+  }
+}
+```
+
+### 2. Isolated Local Execution (`uv run`)
+If the repository is cloned locally, run it inside the source folder without manual virtual environment management:
+
+```json
+{
+  "mcpServers": {
+    "DepMap": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "/path/to/DepMap",
+        "depmap-mcp"
+      ]
+    }
+  }
+}
+```
+
+### 3. Local Virtual Environment (`venv`)
+Clone the repository and compile the dependencies in a self-contained local virtual environment:
+
+```bash
+git clone https://github.com/nrdxp/DepMap.git
+cd DepMap
+
+# Using uv (highly recommended for performance)
+uv venv
+uv pip install -e ".[dev]"
+
+# Or using standard venv
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+Then configure your MCP client to invoke the absolute path of the generated executable script:
+
+```json
+{
+  "mcpServers": {
+    "DepMap": {
+      "command": "/path/to/DepMap/.venv/bin/depmap-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+### 4. Global Installation via `pipx`
+Install the application in a user-local isolated directory and expose the `depmap-mcp` binary:
+
+```bash
+pipx install git+https://github.com/nrdxp/DepMap.git
+# Or from local source:
+pipx install /path/to/DepMap
+```
+
+Then reference the binary globally:
+
+```json
+{
+  "mcpServers": {
+    "DepMap": {
+      "command": "depmap-mcp",
+      "args": []
     }
   }
 }
@@ -99,11 +167,19 @@ Search for identifiers across codebase (unchanged from RepoMapper).
 ## Development
 
 ```bash
-# Install dev dependencies
-pip install -e ".[dev]"
+# Clone the repository
+git clone https://github.com/nrdxp/DepMap.git
+cd DepMap
 
-# Run tests
-pytest tests/ -v
+# Initialize and install development dependencies via uv
+uv sync --all-extras
+
+# Run the test suite
+uv run pytest tests/ -v
+
+# Run linter and formatter checks
+uv run ruff check src/
+uv run ruff format src/
 ```
 
 ## Attribution
