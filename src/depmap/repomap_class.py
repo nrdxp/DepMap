@@ -30,7 +30,7 @@ class FileReport:
 # Constants
 CACHE_VERSION = 1
 
-TAGS_CACHE_DIR = os.path.join(os.getcwd(), f".repomap.tags.cache.v{CACHE_VERSION}")
+TAGS_CACHE_DIR = f".repomap.tags.cache.v{CACHE_VERSION}"
 SQLITE_ERRORS = (sqlite3.OperationalError, sqlite3.DatabaseError)
 
 # Hard stopword keywords — language-level noise that never carries structural signal.
