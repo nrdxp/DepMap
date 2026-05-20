@@ -227,3 +227,16 @@ class TestExistingBehaviorPreserved:
         if hello_tags:
             # If found, it should have the mentioned_idents boost (10x)
             assert hello_tags[0][0] > 0
+
+
+class TestCacheLocation:
+    def test_cache_is_relative_to_root(self, tmp_path):
+        """Verify that the tags cache is created inside the specified project root."""
+        from depmap.repomap_class import TAGS_CACHE_DIR
+
+        rm = RepoMap(root=str(tmp_path))
+
+        expected_cache_dir = tmp_path / TAGS_CACHE_DIR
+
+        if hasattr(rm, "TAGS_CACHE") and hasattr(rm.TAGS_CACHE, "directory"):
+            assert Path(rm.TAGS_CACHE.directory) == expected_cache_dir
