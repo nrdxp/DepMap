@@ -3,6 +3,7 @@
 # Import plugins to trigger auto-registration
 from . import (
     go,  # noqa: F401
+    node,  # noqa: F401
     rust,  # noqa: F401
 )
 from .base import (

@@ -70,11 +70,37 @@ class TestResolveProjectDependencies:
         assert result["dependencies"] == []
         assert result["unresolved"] == []
 
+    def test_detects_node_toolchain(self, tmp_path):
+        """Detects Node toolchain when package.json exists."""
+        (tmp_path / "package.json").write_text("{}")
+        result = resolve_project_dependencies(tmp_path)
+        assert "node" in result["toolchains_detected"]
+
+    def test_lists_node_dependencies(self, tmp_path):
+        """Lists dependencies from package.json."""
+        import json
+
+        (tmp_path / "package.json").write_text(json.dumps({"dependencies": {"express": "^4.0.0"}}))
+        express_dir = tmp_path / "node_modules" / "express"
+        express_dir.mkdir(parents=True)
+        (express_dir / "package.json").write_text(json.dumps({"version": "4.18.2"}))
+
+        result = resolve_project_dependencies(tmp_path, toolchains=["node"])
+
+        assert "node" in result["toolchains_detected"]
+        dep_names = {d["name"] for d in result["dependencies"]}
+        assert "express" in dep_names
+
+        express_dep = next(d for d in result["dependencies"] if d["name"] == "express")
+        assert express_dep["version"] == "4.18.2"
+        assert express_dep["source_path"] == str(express_dir)
+
 
 class TestToolchainRegistry:
     """Tests for the toolchain registry."""
 
-    def test_both_toolchains_registered(self):
-        """Both Rust and Go toolchains are registered."""
+    def test_all_toolchains_registered(self):
+        """Rust, Go, and Node toolchains are registered."""
         assert "rust" in TOOLCHAIN_REGISTRY
         assert "go" in TOOLCHAIN_REGISTRY
+        assert "node" in TOOLCHAIN_REGISTRY
